@@ -13,9 +13,7 @@ from datetime import datetime
 import json
 import time
 import sys
-
-GARMIN_USERNAME = ""
-GARMIN_PASSWORD = ""
+import os
 
 
 class DateOption(Option):
@@ -36,25 +34,46 @@ class DateOption(Option):
 
 
 def main():
-	with open('config/secret.json') as secret_file:
-		secret = json.load(secret_file)
-		GARMIN_USERNAME = secret["user"]
-		GARMIN_PASSWORD = secret["password"]
+    # Check if default config file exists, if so load garmin username and password
+    if os.path.isfile("config/secret.json"):
+        with open('config/secret.json') as secret_file:                                                                                                                                                                              
+            secret = json.load(secret_file)                                                                                                                                                                                          
+            GARMIN_USERNAME = secret["user"]                                                                                                                                                                                         
+            GARMIN_PASSWORD = secret["password"]                                                                                                                                                                                     
+    else:
+        GARMIN_USERNAME = ""
+        GARMIN_PASSWORD = ""
+                                                                                                                                                                                                                                 
+    usage = 'usage: sync.py [options]'                                                                                                                                                                                           
+    p = OptionParser(usage=usage, option_class=DateOption)                                                                                                                                                                       
+    p.add_option('-c', '--config', default='./config', type='string', metavar='dir', help="json configuration folder, default: ./config")     
 
-	usage = 'usage: sync.py [options]'
-	p = OptionParser(usage=usage, option_class=DateOption)
-	p.add_option('--garmin-username', '--gu',  default=GARMIN_USERNAME, type='string', metavar='<user>', help='username to login Garmin Connect.')
-	p.add_option('--garmin-password', '--gp', default=GARMIN_PASSWORD, type='string', metavar='<pass>', help='password to login Garmin Connect.')
-	p.add_option('-f', '--fromdate', type='date', default="2022-01-01", metavar='<date>', help="Start date from the range, default: 2002-01-01")
-	p.add_option('-t', '--todate', type='date', default=date.today(), metavar='<date>', help="End date from the range, default: Today")
-	p.add_option('--no-upload', action='store_true', help="Don't upload to Garmin Connect. Output binary-strings to stdout.")
-	p.add_option('-v', '--verbose', action='store_true', help='Run verbosely')
-	opts, args = p.parse_args()
+    p.add_option('--garmin-username', '--gu',  default=GARMIN_USERNAME, type='string', metavar='<user>', help='username to login Garmin Connect.')                                                                           
+    p.add_option('--garmin-password', '--gp', default=GARMIN_PASSWORD, type='string', metavar='<pass>', help='password to login Garmin Connect.')   
+                                                                                              
+    p.add_option('-f', '--fromdate', type='date', default="2022-01-01", metavar='<date>', help="Start date from the range, default: 2002-01-01")                                                                                 
+    p.add_option('-t', '--todate', type='date', default=date.today(), metavar='<date>', help="End date from the range, default: Today")                                                                                          
 
-	sync(**opts.__dict__)
+    p.add_option('--no-upload', action='store_true', help="Don't upload to Garmin Connect. Output binary-strings to stdout.")                                                                                                    
+
+    p.add_option('-v', '--verbose', action='store_true', help='Run verbosely')                                                                                                                                                   
+    (opts, args) = p.parse_args()                                                                                                                                                                                                
+                                                                                                                                                                                                                                 
+    # If no username set but config location given, set garmin username and password from config file
+    if len(opts.garmin_username) == 0 and os.path.isfile(opts.config + "/secret.json"):                                                                                                                                                                                                    
+        if opts.verbose: print("Loading config file")
+        with open(opts.config + "/secret.json") as secret_file:                                                                                                                                                                              
+            secret = json.load(secret_file)                                                                                                                                                                                          
+            opts.garmin_username = secret["user"]                                                                                                                                                                                         
+            opts.garmin_password = secret["password"]     
+
+    if(opts.verbose):
+        print("Configuration:", opts)
+
+    sync(**opts.__dict__)
 
 
-def sync(garmin_username, garmin_password, fromdate, todate, no_upload, verbose):
+def sync(config, garmin_username, garmin_password, fromdate, todate, no_upload, verbose):
 	def verbose_print(s):
 		if verbose:
 			if no_upload:
@@ -67,7 +86,7 @@ def sync(garmin_username, garmin_password, fromdate, todate, no_upload, verbose)
 		return
 
 	# Withings API
-	withings = WithingsAccount()
+	withings = WithingsAccount(config_dir=config)
 
 	startdate = int(time.mktime(fromdate.timetuple()))
 	enddate = int(time.mktime(todate.timetuple())) + 86399

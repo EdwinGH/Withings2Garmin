@@ -9,7 +9,7 @@ This project allow you to sync your measurements between Withings scale and Garm
 Clone repository from GitHub
 
 ```
-git clone https://github.com/sodelalbert/Withings2Garmin.git
+git clone https://github.com/EdwinGH/Withings2Garmin.git
 ```
 Insert your Garmin Connect password into file ``` config/secret.json``` as in example:
 
@@ -27,11 +27,6 @@ Passwords are stored locally inside your host operating system. Make sure that t
 
 
 It's required to perform first run manually. During that you will need to chose user of of the scale and ``` config/withings_user.json``` will be created automatically for authorization purposes.
-
-Please add execution rights to ```run.sh```
-```
-chmod +x run.sh
-```
 
 Perform initial config.
 
@@ -77,17 +72,42 @@ Garmin Connect User Name: 3efa8d8-c9ed-40f4-98ec-21259ec6afc0
 Fit file uploaded to Garmin Connect
 ```
 
-Your measurements should be synchornized at this point ;) 
+Your measurements should be synchronized at this point ;) 
+
+## Command-line parameters
+
+Script sync.py allows to use command line arguments 
+
+```./sync.py --help
+Usage: sync.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -c dir, --config=dir  json configuration folder, default: ./config
+  --garmin-username=<user>, --gu=<user>
+                        username to login Garmin Connect.
+  --garmin-password=<pass>, --gp=<pass>
+                        password to login Garmin Connect.
+  -f <date>, --fromdate=<date>
+                        Start date from the range, default: 2002-01-01
+  -t <date>, --todate=<date>
+                        End date from the range, default: Today
+  --no-upload           Don't upload to Garmin Connect. Output binary-strings
+                        to stdout.
+  -v, --verbose         Run verbosely
+```
+
+Note that in this fork I added the --config option, as running the script from another directory lead to the error that the config files cound not be found...
 
 ## Manual synchronization
 
-Script sync.py allows to use command line arguments. By default it will synchronize your reporst starting from 2022-01-01 up to current date. 
+Script sync.py allows to use command line arguments. By default it will synchronize your reporst starting from 2022-01-01 up to today. 
 
-```./sync```
+```./sync.py```
 
 If you would like to specidy manualy  range you can do it by executing following command.
 
-```./sync -fromdate --fromdate 2022-01-01 --todate 2022-01-10```
+```./sync.py -fromdate --fromdate 2022-01-01 --todate 2022-01-10```
 
 
 ## References

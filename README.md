@@ -111,8 +111,9 @@ If you would like to manually specify a range you can do it by executing followi
 
 Or from yesterday to today:
 
-```./sync.py --fromdate `/usr/bin/date +'\%Y-\%m-\%d' -d "-1 day"` ```
+```./sync.py --fromdate `/usr/bin/date +'%Y-%m-%d' -d "-1 day"` ```
 
+(If you add this to your cron script, don't forget to add backslashes in front of the % characters :-) )
 
 ## References
 

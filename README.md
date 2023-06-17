@@ -101,13 +101,17 @@ Note that in this fork I added the --config option, as running the script from a
 
 ## Manual synchronization
 
-Script sync.py allows to use command line arguments. By default it will synchronize your reporst starting from 2022-01-01 up to today. 
+By default it will synchronize your report starting from 2022-01-01 up to today. 
 
 ```./sync.py```
 
-If you would like to specidy manualy  range you can do it by executing following command.
+If you would like to manually specify a range you can do it by executing following command.
 
-```./sync.py -fromdate --fromdate 2022-01-01 --todate 2022-01-10```
+```./sync.py --fromdate 2022-01-01 --todate 2022-01-10```
+
+Or from yesterday to today:
+
+```./sync.py --fromdate `/usr/bin/date +'\%Y-\%m-\%d' -d "-1 day"` ```
 
 
 ## References

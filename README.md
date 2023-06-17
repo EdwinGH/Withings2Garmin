@@ -117,4 +117,5 @@ Or from yesterday to today:
 
 ## References
 
+Thanks to Albert Sodel for making this script! (Almost) exactly what I needed!
 Thanks to jaroslawhartman for sharing code of withings-garmin-v2. This app is based on his briliant project.

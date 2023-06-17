@@ -17,8 +17,8 @@ class Withings():
 	#TOKEN_URL = 'https://account.withings.com/oauth2/token'
 	TOKEN_URL = 'https://wbsapi.withings.net/v2/oauth2'
 	GETMEAS_URL = 'https://wbsapi.withings.net/measure?action=getmeas'
-	APP_CONFIG = 'config/withings_app.json'
-	USER_CONFIG = 'config/withings_user.json'
+	APP_CONFIG = 'withings_app.json'
+	USER_CONFIG = 'withings_user.json'
 
 class WithingsConfig(Withings):
 	config = {}
@@ -43,11 +43,11 @@ class WithingsConfig(Withings):
 class WithingsOAuth2(Withings):
 	app_config = user_config = None
 
-	def __init__(self):
-		app_cfg = WithingsConfig(Withings.APP_CONFIG)
+	def __init__(self, config_dir=''):
+		app_cfg = WithingsConfig(config_dir + '/' + Withings.APP_CONFIG)
 		self.app_config = app_cfg.config
 
-		user_cfg = WithingsConfig(Withings.USER_CONFIG)
+		user_cfg = WithingsConfig(config_dir + '/' + Withings.USER_CONFIG)
 		self.user_config = user_cfg.config
 
 		if not self.user_config.get('access_token'):
@@ -163,8 +163,8 @@ class WithingsOAuth2(Withings):
 			self.user_config['userid'] = accessToken['body']['userid']
 
 class WithingsAccount(Withings):
-	def __init__(self):
-		self.withings = WithingsOAuth2()
+	def __init__(self, config_dir=''):
+		self.withings = WithingsOAuth2(config_dir)
 
 	def getMeasurements(self, startdate, enddate):
 		print("Withings: Get Measurements")

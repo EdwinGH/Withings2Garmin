@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from io import BytesIO
@@ -257,7 +258,6 @@ class FitEncoder_Weight(FitEncoder):
         crc = self.crc()
         self.buf.seek(0, 2)
         self.buf.write(crc)
-        print ('fit finish OK')
 
     def get_size(self):
         orig_pos = self.buf.tell()

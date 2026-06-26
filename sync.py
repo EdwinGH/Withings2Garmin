@@ -16,7 +16,6 @@ from datetime import datetime
 from withings2 import WithingsAccount
 from fit import FitEncoder_Weight
 
-from garth.exc import GarthHTTPError
 from garminconnect import (
   Garmin,
   GarminConnectAuthenticationError,
@@ -55,11 +54,13 @@ def main():
 #  print("Python version %s.%s.%s" % sys.version_info[:3])
 
   # Check if secret config file exists, if so load garmin username and password
-  if os.path.isfile(GARMIN_TOKENSTORE + GARMIN_SECRET_FILE):
-    with open(GARMIN_TOKENSTORE + GARMIN_SECRET_FILE) as secret_file:
+  if os.path.isfile(GARMIN_TOKENSTORE + "/" + GARMIN_SECRET_FILE):
+    with open(GARMIN_TOKENSTORE + "/" + GARMIN_SECRET_FILE) as secret_file:
       secret = json.load(secret_file)
       GARMIN_USERNAME = secret["user"]
       GARMIN_PASSWORD = secret["password"]
+  else:
+    print("Garmin secret file (%s) not found in config folder (%s)" % (GARMIN_SECRET_FILE, GARMIN_TOKENSTORE))
 
   usage = 'usage: sync.py [options]'
   p = OptionParser(usage=usage, option_class=DateOption)
@@ -99,11 +100,37 @@ def main():
 
 def init_garmin(garmin_username, garmin_password, verbose_print):
   """Initialize Garmin API with your credentials."""
+
+  # EZ added to fix login timeout issues, 10s default too short
+  def _set_timeout(garmin, seconds=30):
+    """Best-effort timeout bump; tolerant of garth/garminconnect API changes."""
+    client = getattr(garmin, "client", None)
+    if client is not None and hasattr(client, "timeout"):
+      try:
+        client.timeout = seconds
+      except Exception:
+        pass
+
+  def _login_with_retry(garmin, tokenstore=None, attempts=4):
+    """Retry login on transient timeouts; re-raise the last error if all fail."""
+    for i in range(attempts):
+      try:
+        garmin.login(tokenstore) if tokenstore is not None else garmin.login()
+        return
+      except (GarminConnectConnectionError,
+              requests.exceptions.RequestException) as e:
+        if i == attempts - 1:
+          raise
+        wait = 5 * (i + 1)
+        verbose_print(f"Garmin login attempt {i+1} failed ({e}); retrying in {wait}s...\n")
+        time.sleep(wait)
+
   try:
-    verbose_print(f"Trying to login to Garmin Connect using token data from '{GARMIN_TOKENSTORE}' ...\n")
+    verbose_print(f"Trying to login to Garmin Connect using token data from '{GARMIN_TOKENSTORE}' folder...\n")
     garmin = Garmin()
-    garmin.login(GARMIN_TOKENSTORE)
-  except (FileNotFoundError, GarthHTTPError, GarminConnectAuthenticationError):
+    _set_timeout(garmin)
+    _login_with_retry(garmin, GARMIN_TOKENSTORE)
+  except (FileNotFoundError, GarminConnectAuthenticationError, GarminConnectConnectionError):
     # Session is expired. You'll need to log in again
     verbose_print(
       "Login tokens not present, will login with your Garmin Connect credentials to generate them.\n"
@@ -111,19 +138,21 @@ def init_garmin(garmin_username, garmin_password, verbose_print):
     )
     try:
       garmin = Garmin(garmin_username, garmin_password)
-      garmin.login()
+      _set_timeout(garmin)
+      _login_with_retry(garmin)
       # Save tokens for next login
-      garmin.garth.dump(GARMIN_TOKENSTORE)
-
+      garmin.client.dump(GARMIN_TOKENSTORE)
     except (
       FileNotFoundError,
-      GarthHTTPError,
       GarminConnectAuthenticationError,
+      GarminConnectConnectionError,
+      GarminConnectTooManyRequestsError,
       requests.exceptions.HTTPError,
     ) as err:
       print(err)
       return None
 
+  verbose_print(f"Connected to Garmin Connect\n")
   return garmin
 
 def sync(config, garmin_username, garmin_password, fromdate, todate, no_upload, verbose):
@@ -184,16 +213,22 @@ def sync(config, garmin_username, garmin_password, fromdate, todate, no_upload, 
   verbose_print("Fit values: " + str(fit.getvalue()) + "\n")
 
   # garmin connect
+  verbose_print("Attempting to init Garmin\n")
   garmin = init_garmin(garmin_username, garmin_password, verbose_print)
-  verbose_print("Attempting to upload fit file...\n")
   activityfilename = "/tmp/f.fit"
   with open(activityfilename,'wb') as activityfile:
     activityfile.write(fit.getvalue())
 
+  verbose_print("Attempting to upload fit file...\n")
   try:
     r = garmin.upload_activity(activityfilename)
-    r.raise_for_status()
+    # garminconnect 0.3.x checks status internally and returns parsed JSON (a dict),
+    # so the old r.raise_for_status() no longer applies.
+    if hasattr(r, "raise_for_status"):
+      r.raise_for_status()                     # older lib: Response object
     print("Withings fit values uploaded to Garmin Connect.")
+
+    verbose_print(f"Upload response: {r}\n")
   except Exception as ex:
     print("Failed to upload:", ex)
 

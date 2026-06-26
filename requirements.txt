@@ -1,0 +1,4 @@
+garminconnect==0.3.6
+garth==0.8.0
+readchar==4.0.5.dev0
+Requests==2.34.2

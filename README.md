@@ -3,6 +3,12 @@
 This project allow you to sync your measurements between Withings scale and Garmin Connect to have unified experience.
 
 ## Preconditions
+- Python 3.9+ (developed/tested on 3.14)
+- Install dependencies:
+-- Direct dependencies: `garminconnect` (0.3.6+) and `requests`.
+-- A `config/` folder (default `./config`, override with `--config`) containing:
+  - `gsecret.json` — Garmin Connect credentials: `{"user": "...", "password": "..."}`
+  - Withings credentials: `withings_app.json` and `withings_user.json`
 
 ## Installation
 

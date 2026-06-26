@@ -4,6 +4,15 @@ This project allow you to sync your measurements between Withings scale and Garm
 
 ## Preconditions
 
+- Python 3.9+ (tested on 3.14)
+- Install dependencies: `pip install -r requirements.txt`
+- **Withings API access**: register an app at the Withings developer portal to obtain
+  client credentials, stored in `config/withings_app.json`. User authorization is
+  stored in `config/withings_user.json`.
+- **Garmin Connect account**: credentials in `config/gsecret.json`
+  (`{"user": "...", "password": "..."}`). Auth tokens (`garmin_tokens.json`) are
+  generated automatically on first login.
+  
 ## Installation
 
 Clone repository from GitHub
